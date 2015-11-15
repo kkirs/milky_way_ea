@@ -561,46 +561,45 @@ void OpenOrder( int direction )
 }
 
 //+------------------------------------------------------------------+
-//| Закрытие одного ордера                                           |
+//| Закрытие ордера / ордеров для текущего символа                   |
 //+------------------------------------------------------------------+
 void CloseOrd()
 {
-	int n = 0, ticket = -1;
-	for( int i = 0; i < OrdersTotal(); i++ )
+	for (int i = OrdersTotal() - 1; i >= 0; i--)
 	{
-		if( !OrderSelect( i, SELECT_BY_POS, MODE_TRADES ) ) break;
-		if( OrderMagicNumber() != Magic || OrderSymbol() != Symbol() ) continue;
-		if( OrderType() == OP_SELL )
+		if (!OrderSelect(i, SELECT_BY_POS, MODE_TRADES)) continue;
+		if (OrderMagicNumber() != Magic || OrderSymbol() != Symbol()) continue;
+
+		int n = 0;
+		bool closed = false;
+
+		if (OrderType() == OP_SELL)
 		{
 			for (n = 1; n <= MathMax(1, NumOfTry); n++)
 			{
-				ticket=OrderClose( OrderTicket(), OrderLots(), Ask, Slippage, Green);
-				if (ticket >= 0) break;
+				closed = OrderClose( OrderTicket(), OrderLots(), Ask, Slippage, Green);
+				if (closed) break;
 				Sleep(1000);
 				RefreshRates();
 			}
 			Sleep(5000);
-			if (ticket > 0)
-			{
-				if (OrderSelect(ticket, SELECT_BY_TICKET, MODE_TRADES)) EAComment("Sell order closed! Price: " + OrderOpenPrice());
-			}
+			if (closed) EAComment("Sell order closed! Price: " + OrderClosePrice());
 			else EAComment("Error of closing sell order!: " + GetLastError());
+			continue;
 		}
-		if( OrderType() == OP_BUY )
+		if (OrderType() == OP_BUY)
 		{
 			for (n = 1; n <= MathMax(1, NumOfTry); n++)
 			{
-				ticket=OrderClose( OrderTicket(), OrderLots(), Bid, Slippage, Green);
-				if (ticket >= 0) break;
+				closed = OrderClose( OrderTicket(), OrderLots(), Bid, Slippage, Green);
+				if (closed) break;
 				Sleep(1000);
 				RefreshRates();
 			}
 			Sleep(5000);
-			if (ticket > 0)
-			{
-				if (OrderSelect(ticket, SELECT_BY_TICKET, MODE_TRADES)) EAComment("Buy order closed! Price: " + OrderOpenPrice());
-			}
+			if (closed) EAComment("Buy order closed! Price: " + OrderClosePrice());
 			else EAComment("Error of closing buy order!: " + GetLastError());
+			continue;
 		}
 	}
 }

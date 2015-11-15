@@ -1116,47 +1116,68 @@ double LastPosLot(int dir)
 }
 //+------------------------------------------------------------------+
 
-//+------------------------------------------------------------------+
-//| Функция расчитывает цену безубытка сети ордеров бай              |
-//| в заданном направлении                                           |
-//+------------------------------------------------------------------+
-double PriceBE(int dir)
+//+-------------------------------------------------------------------------------------------------------------+
+//| Функция расчитывает цену безубытка ордеров в заданном направлении или для всех ордеров для текущего символа |
+//+-------------------------------------------------------------------------------------------------------------+
+double PriceBE(const int dir)
 {
-	double BEPrice=0;
-	double MyBEPrice=0;
-	double BuyLots=0;
-	double SellLots=0;
-	double BuyProfit=0;
-	double SellProfit=0;
-	double BuyLevel=0;
-	double SellLevel=0;
-	if(OrdExist(OP_BUY)>0||OrdExist(OP_SELL)>0)
+	double BuyLots    = 0;
+	double SellLots   = 0;
+	double BuyProfit  = 0;
+	double SellProfit = 0;
+	double BuyLevel   = 0;
+	double SellLevel  = 0;
+	double BEPrice    = 0;
+
+	for (int i = OrdersTotal() - 1; i >= 0; i--)
 	{
-		for(int i=OrdersTotal(); i>=0; i--)
+		if (!OrderSelect(i, SELECT_BY_POS, MODE_TRADES)) continue;
+		if (OrderMagicNumber() != Magic || OrderSymbol() != Symbol()) continue;
+		if (OrderType() == OP_BUY)
 		{
-			if (!OrderSelect(i,SELECT_BY_POS,MODE_TRADES)) continue;
-			if (OrderMagicNumber()!=Magic||OrderSymbol()!=Symbol()) continue;
-			if(OrderType()==OP_BUY)
-			{
-				BuyLots=BuyLots+OrderLots();
-				BuyProfit=BuyProfit+OrderProfit()+OrderCommission()+OrderSwap();
-			}
-			if(OrderType()==OP_SELL)
-			{
-				SellLots=SellLots+OrderLots();
-				SellProfit=SellProfit+OrderProfit()+OrderCommission()+OrderSwap();
-			}
+			BuyLots     =  BuyLots + OrderLots();
+			BuyProfit   =  BuyProfit + OrderProfit() + OrderCommission() + OrderSwap();
+			continue;
+		}
+		if (OrderType() == OP_SELL)
+		{
+			SellLots    =  SellLots + OrderLots();
+			SellProfit  =  SellProfit + OrderProfit() + OrderCommission() + OrderSwap();
+			continue;
 		}
 	}
-	double TickValue=MarketInfo(Symbol(),MODE_TICKVALUE);
-	if (BuyLots>0)            BuyLevel=NormalizeDouble(Bid-(BuyProfit/(TickValue*BuyLots)*Point),Digits); else BuyLevel=0;
-	if (SellLots>0)           SellLevel=NormalizeDouble(Ask+(SellProfit/(TickValue*SellLots)*Point),Digits); else SellLevel=0;
-	if ((BuyLots-SellLots)>0) BEPrice=NormalizeDouble(Bid-((BuyProfit+SellProfit)/(TickValue*(BuyLots-SellLots))*Point),Digits);
-	if ((SellLots-BuyLots)>0) BEPrice=NormalizeDouble(Ask+((BuyProfit+SellProfit)/(TickValue*(SellLots-BuyLots))*Point),Digits);
-	if(dir==OP_BUY)   MyBEPrice=BuyLevel;
-	if(dir==OP_SELL)  MyBEPrice=SellLevel;
-	if(dir==-1)       MyBEPrice=BEPrice;
-	return(NormalizeDouble(MyBEPrice,Digits));
+
+	double TickValue = MarketInfo(Symbol(), MODE_TICKVALUE);	
+	
+	if (dir == OP_BUY)
+	{
+		if (BuyLots > 0)
+		{
+			BuyLevel  = NormalizeDouble(Bid - (BuyProfit / (TickValue * BuyLots) * Point), Digits);
+		}
+		else BuyLevel = 0;
+		return(NormalizeDouble(BuyLevel, Digits));
+	}
+	
+	if (dir == OP_SELL)
+	{
+		if (SellLots > 0)
+		{
+			SellLevel = NormalizeDouble(Ask + (SellProfit / (TickValue * SellLots) * Point), Digits);
+		}
+		else SellLevel = 0;
+		return(NormalizeDouble(SellLevel, Digits));
+	}
+	
+	if (dir == -1)
+	{
+		if ((BuyLots - SellLots) > 0) BEPrice   = NormalizeDouble(Bid - ((BuyProfit + SellProfit) / (TickValue * (BuyLots - SellLots)) * Point), Digits);
+		if ((SellLots - BuyLots) > 0) BEPrice   = NormalizeDouble(Ask + ((BuyProfit + SellProfit) / (TickValue * (SellLots - BuyLots)) * Point), Digits);
+		return(NormalizeDouble(BEPrice, Digits));
+	}
+
+	EAComment("Invalid argumet for PriceBE() passed.");
+	return(-1); // means error
 }
 //+------------------------------------------------------------------+
 

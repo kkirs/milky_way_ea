@@ -755,14 +755,28 @@ double NormalizeLot(double Lot)
 //+------------------------------------------------------------------+
 //|  Стопы                                                           |
 //+------------------------------------------------------------------+
-double StopLoss(int direction, double OpenPrice)
+double StopLoss(const int direction, const double OpenPrice)
 {
-	double Stop=0;
-	if (direction==OP_BUY||direction==OP_BUYLIMIT||direction==OP_BUYSTOP)    Stop=Extremum(HistorySL,-1,ExtrTimeframe)-OtstupSL*PricePoint;
-	if (direction==OP_SELL||direction==OP_SELLLIMIT||direction==OP_SELLSTOP) Stop=Extremum(HistorySL,1,ExtrTimeframe)+OtstupSL*PricePoint;
-	if ((direction==OP_BUY||direction==OP_BUYLIMIT||direction==OP_BUYSTOP)&&Stop>=OpenPrice-MinSL*PricePoint)    Stop=OpenPrice-MinSL*PricePoint;
-	if ((direction==OP_SELL||direction==OP_SELLLIMIT||direction==OP_SELLSTOP)&&Stop<=OpenPrice+MinSL*PricePoint) Stop=OpenPrice+MinSL*PricePoint;
-	return (NormalizeDouble(Stop,Digits));
+	double StopLossPrice = 0;
+	
+	if (direction == OP_BUY || direction == OP_BUYLIMIT || direction == OP_BUYSTOP)
+	{
+		StopLossPrice = Extremum(HistorySL, -1, ExtrTimeframe) - OtstupSL * PricePoint;
+		if (StopLossPrice > OpenPrice - MinSL * PricePoint)
+			StopLossPrice = OpenPrice - MinSL * PricePoint;
+		return NormalizeDouble(StopLossPrice, Digits);
+	}
+	
+	if (direction == OP_SELL || direction == OP_SELLLIMIT || direction == OP_SELLSTOP)
+	{
+		StopLossPrice = Extremum(HistorySL, 1, ExtrTimeframe) + OtstupSL * PricePoint;
+		if (StopLossPrice < OpenPrice + MinSL * PricePoint)
+			StopLossPrice = OpenPrice + MinSL * PricePoint;
+		return NormalizeDouble(StopLossPrice, Digits);
+	}
+
+	EAComment("StopLoss() error.");
+	return(-1); // means error
 }
 //+------------------------------------------------------------------+
 

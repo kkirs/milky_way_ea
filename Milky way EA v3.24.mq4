@@ -421,20 +421,17 @@ void DrawFlag( int dir )
 	}
 }
 
-//+------------------------------------------------------------------+
-//| Возвращает количество ордеров заданного направления              |
-//+------------------------------------------------------------------+
-int OrdExist(int direction)
+//+---------------------------------------------------------------------+
+//| Возвращает количество ордеров заданного направления по текущей паре |
+//+---------------------------------------------------------------------+
+int OrdExist(const int direction)
 {
-	int OrdCount=0;
-	if (OrdersTotal()>0)
+	int OrdCount = 0;
+	for (int i = OrdersTotal() - 1; i >= 0; i--)
 	{
-		for(int i=0; i<=OrdersTotal(); i++)
-		{
-			if (!OrderSelect(i,SELECT_BY_POS,MODE_TRADES)) continue;
-			if (OrderMagicNumber()!=Magic||OrderSymbol()!=Symbol()) continue;
-			if (OrderType()==direction) OrdCount++;
-		}
+		if (!OrderSelect(i, SELECT_BY_POS, MODE_TRADES)) continue;
+		if (OrderMagicNumber() != Magic || OrderSymbol() != Symbol()) continue;
+		if (OrderType() == direction) OrdCount++;
 	}
 	return (OrdCount);
 }

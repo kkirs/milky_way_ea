@@ -648,17 +648,19 @@ bool AllRisk()
 double TekProfit()
 {
 	double TekProfit = 0;
-	for( int i = 0; i < OrdersTotal(); i++ )
+	for (int i = OrdersTotal() - 1; i >= 0; i--)
 	{
-		if( !OrderSelect( i, SELECT_BY_POS, MODE_TRADES ) ) break;
-		if( OrderMagicNumber() != Magic || OrderSymbol() != Symbol() ) continue;
-		if( OrderType() == OP_SELL )
+		if (!OrderSelect(i, SELECT_BY_POS, MODE_TRADES)) continue;
+		if (OrderMagicNumber() != Magic || OrderSymbol() != Symbol()) continue;
+		if (OrderType() == OP_SELL)
 		{
-			TekProfit = TekProfit + (OrderOpenPrice()-Bid);
+			TekProfit = TekProfit + (OrderOpenPrice() - Bid);
+			continue;
 		}
-		if( OrderType() == OP_BUY)
+		if (OrderType() == OP_BUY)
 		{
-			TekProfit = TekProfit + (Ask-OrderOpenPrice());
+			TekProfit = TekProfit + (Ask - OrderOpenPrice());
+			continue;
 		}
 	}
 	return(TekProfit);

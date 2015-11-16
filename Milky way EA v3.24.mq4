@@ -604,33 +604,37 @@ void CloseOrd()
 	}
 }
 
-//+---------------------------------------------------------------------------------------------------+
-//| Расчет максимального риска в процентах для ВСЕХ позиций на счете (если превышен, входов не будет) |                                               |
-//+---------------------------------------------------------------------------------------------------+
+//+--------------------------------------------------------------------------------------------+
+//| Расчет максимального риска в процентах для ВСЕХ позиций на счете, имеющих уровень StopLoss |
+//+--------------------------------------------------------------------------------------------+
 bool AllRisk()
 {
 	double currRiskInPercent   = 0;
-	double distanceInPoints    = 0;
 
-	for( int i = 0; i < OrdersTotal(); i++ )
+	for (int i = OrdersTotal() - 1; i >= 0; i--)
 	{
-		if(!OrderSelect(i, SELECT_BY_POS, MODE_TRADES)) continue;
+		if (!OrderSelect(i, SELECT_BY_POS, MODE_TRADES)) continue;
+		if (OrderStopLoss() == 0) continue;
 
-		if(OrderType() == OP_SELL && OrderOpenPrice() < OrderStopLoss())
+		double distanceInPoints = 0;
+		if (OrderType() == OP_SELL && OrderOpenPrice() < OrderStopLoss())
 		{
-		   distanceInPoints  = (OrderStopLoss() - OrderOpenPrice()) / Point;
+			distanceInPoints  = (OrderStopLoss() - OrderOpenPrice()) / Point;
 			currRiskInPercent = currRiskInPercent + (distanceInPoints * OrderLots() / AccountBalance()) * 100;
 		}
-		if(OrderType() == OP_BUY  && OrderOpenPrice() > OrderStopLoss())
+		if (OrderType() == OP_BUY  && OrderOpenPrice() > OrderStopLoss())
 		{
-		   distanceInPoints  = (OrderOpenPrice() - OrderStopLoss()) / Point;
+			distanceInPoints  = (OrderOpenPrice() - OrderStopLoss()) / Point;
 			currRiskInPercent = currRiskInPercent + (distanceInPoints * OrderLots() / AccountBalance()) * 100;
 		}
 	}
 
-	currRiskInPercent = NormalizeDouble(currRiskInPercent, 2); // rounding
+	currRiskInPercent = NormalizeDouble(currRiskInPercent, 2);	// rounding
 
-	if( currRiskInPercent >= MaxRisk )
+	currRiskInPercent = MathMax(currRiskInPercent, 0);			// if currRiskInPercent < 0
+	currRiskInPercent = MathMin(currRiskInPercent, 100);		// if currRiskInPercent > 100
+
+	if (currRiskInPercent > MaxRisk)
 	{
 		EAComment("Achieved the maximum level of risk! (" + currRiskInPercent + " percent | MaxRisk: " + MaxRisk + " percent)");
 		return(true);

@@ -436,125 +436,99 @@ int OrdExist(const int direction)
 	return (OrdCount);
 }
 
-//+------------------------------------------------------------------+
-//| Установка отложенных ордеров                                     |
-//+------------------------------------------------------------------+
-void OpenOrder( int direction )
+//+----------------------------------------+
+//| Открытие ордера в заданном направлении |
+//+----------------------------------------+
+void OpenOrder(const int direction)
 {
-	double OpenPrice = 0, StopLoss = 0, Lot = 0, SL = 0;
+	double	OpenPrice	= 0, 
+			StopLoss	= 0, 
+			SL			= 0,
+			Lot			= 0;
+			
 	int n = 0, ticket = -1;
-	//double OtstupOtl=iATR(Symbol(),Period(),ATROtstupOtlPer,1);
-	if( direction == OP_SELL )
+
+	if (direction == OP_SELL)
 	{
-		OpenPrice=Bid;
-		//if(OtlVar==1) OpenPrice = NormalizeDouble(Low[ iLowest( Symbol(), 0, MODE_LOW, OtlBars, 1 ) ],Digits());
-		//if(OtlVar==2) OpenPrice = NormalizeDouble(Low[ iLowest( Symbol(), 0, MODE_LOW, 4, 1 ) ]-OtstupOtl*OtstupOtlCoef,Digits());
-		//if(OtlVar==3) OpenPrice = NormalizeDouble(Close[1]-OtstupOtl*OtstupOtlCoef,Digits());
-		StopLoss  = StopLoss( OP_SELL, OpenPrice);
-		SL        = NormalizeDouble( ( StopLoss - OpenPrice ) / Point, 0 );
-		if( SL > MaxSL )
+		OpenPrice = Bid;
+		StopLoss  = StopLoss(OP_SELL, OpenPrice);
+		SL        = NormalizeDouble((StopLoss - OpenPrice) / Point, 0);
+		if (SL > MaxSL)
 		{
-			if(!UseMaxSL)
+			if (!UseMaxSL)
 			{
 				EAComment("Стоплосс слишком большой!");
 				return;
 			}
-			if(UseMaxSL)
+			if (UseMaxSL)
 			{
-				StopLoss=NormalizeDouble(OpenPrice+MaxSL*PricePoint,Digits());
+				StopLoss	= NormalizeDouble(OpenPrice + MaxSL * PricePoint, Digits());
+				SL			= MaxSL;
 				EAComment("Стоплосс слишком большой! Параметр UseMaxSL включен. Используем MaxSL=" + MaxSL + " пунктов.");
-				SL=MaxSL;
 			}
 		}
-		if(SL < MinSL)
+		if (SL < MinSL)
 		{
-			StopLoss=NormalizeDouble(OpenPrice+MinSL*PricePoint,Digits());
-			SL=MinSL;
+			StopLoss	= NormalizeDouble(OpenPrice + MinSL * PricePoint, Digits());
+			SL			= MinSL;
 		}
-		Lot = Lots( SL,OpenPrice );
+		Lot = Lots(SL, OpenPrice);
 		for (n = 1; n <= MathMax(1, NumOfTry); n++)
 		{
-			ticket = OrderSend( Symbol(), OP_SELL, Lot, OpenPrice, Slippage, StopLoss, 0, ExpertName + " Magic:" + IntegerToString(Magic), Magic, 0, Red );
+			ticket = OrderSend(Symbol(), OP_SELL, Lot, OpenPrice, Slippage, StopLoss, 0, ExpertName + " Magic:" + IntegerToString(Magic), Magic, 0, Red);
 			if (ticket >= 0) break;
 			Sleep(1000);
 			RefreshRates();
 		}
 		Sleep(5000);
-		if (ticket > 0)
+		if (ticket < 0) EAComment("Error of sending sell order!: " + GetLastError());
+		else
 		{
 			if (OrderSelect(ticket, SELECT_BY_TICKET, MODE_TRADES)) EAComment("Sell order opened! Price: " + OrderOpenPrice());
+			else EAComment("Sell order opened, but OrderSelect() failed!");
 		}
-		else EAComment("Error of sending sell order!: " + GetLastError());
-		/*
-	for (n = 1; n <= MathMax(1, NumOfTry); n++)
-		{
-		ticket = OrderSend( Symbol(), OP_SELL, Lot, OpenPrice, Slippage, StopLoss, 0, ExpertName + " Magic:" + IntegerToString( Magic ), Magic, 0, Red );
-		if (ticket >= 0) break;
-		Sleep(1000);
-		RefreshRates();
-		}
-	Sleep(5000);
-	if (ticket > 0)
-		{
-		if (OrderSelect(ticket, SELECT_BY_TICKET, MODE_TRADES)) EAComment("Стоповый ордер в продажу выставлен!: " + OrderOpenPrice());
-		}
-		else EAComment("Ошибка выставления селлстоп ордера!: " + GetLastError());
-		*/
 	}
 
-	if( direction == OP_BUY )
+	if (direction == OP_BUY)
 	{
-		OpenPrice=Ask;
-		//if(OtlVar==1) OpenPrice = NormalizeDouble(High[ iHighest( Symbol(), 0, MODE_HIGH, OtlBars, 1 ) ],Digits());
-		//if(OtlVar==2) OpenPrice = NormalizeDouble(High[ iHighest( Symbol(), 0, MODE_HIGH, OtlBars, 1 ) ]+OtstupOtl*OtstupOtlCoef,Digits());
-		//if(OtlVar==3) OpenPrice = NormalizeDouble(Close[1]+OtstupOtl*OtstupOtlCoef,Digits());
-		StopLoss  = StopLoss( OP_BUY, OpenPrice );
-		SL        = NormalizeDouble( ( OpenPrice - StopLoss ) / Point, 0 );
-		if( SL > MaxSL )
+		OpenPrice = Ask;
+		StopLoss  = StopLoss(OP_BUY, OpenPrice);
+		SL        = NormalizeDouble((OpenPrice - StopLoss) / Point, 0);
+		if (SL > MaxSL)
 		{
-			if(!UseMaxSL)
+			if (!UseMaxSL)
 			{
 				EAComment("Стоплосс слишком большой!");
 				return;
 			}
-			if(UseMaxSL) StopLoss=NormalizeDouble(OpenPrice-MaxSL*PricePoint,Digits());
+			if (UseMaxSL)
+			{
+				StopLoss	= NormalizeDouble(OpenPrice - MaxSL * PricePoint, Digits());
+				SL			= MaxSL;
+				EAComment("Стоплосс слишком большой! Параметр UseMaxSL включен. Используем MaxSL=" + MaxSL + " пунктов.");
+			}
 		}
-		if(SL < MinSL)
+		if (SL < MinSL)
 		{
-			StopLoss=NormalizeDouble(OpenPrice-MinSL*PricePoint,Digits());
-			SL=MinSL;
+			StopLoss	= NormalizeDouble(OpenPrice - MinSL * PricePoint, Digits());
+			SL			= MinSL;
 		}
-		Lot = Lots( SL,OpenPrice );
+		Lot = Lots(SL, OpenPrice);
 		for (n = 1; n <= MathMax(1, NumOfTry); n++)
 		{
-			ticket = OrderSend( Symbol(), OP_BUY, Lot, OpenPrice, Slippage, StopLoss, 0, ExpertName + " Magic:" + IntegerToString( Magic ), Magic, 0, Blue );
+			ticket = OrderSend(Symbol(), OP_BUY, Lot, OpenPrice, Slippage, StopLoss, 0, ExpertName + " Magic:" + IntegerToString( Magic ), Magic, 0, Blue);
 			if (ticket >= 0) break;
 			Sleep(1000);
 			RefreshRates();
 		}
 		Sleep(5000);
-		if (ticket > 0)
+		if (ticket < 0) EAComment("Error of sending buy order!: " + GetLastError());
+		else
 		{
 			if (OrderSelect(ticket, SELECT_BY_TICKET, MODE_TRADES)) EAComment("Buy order opened! Price: " + OrderOpenPrice());
+			else EAComment("Buy order opened, but OrderSelect() failed!");
 		}
-		else EAComment("Error of sending buy order!: " + GetLastError());
-		/*
-	for (n = 1; n <= MathMax(1, NumOfTry); n++)
-		{
-		ticket = OrderSend( Symbol(), OP_BUYSTOP, Lot, OpenPrice, Slippage, StopLoss, 0, ExpertName + " Magic:" + IntegerToString( Magic ), Magic, 0, Blue );
-		if (ticket >= 0) break;
-		Sleep(1000);
-		RefreshRates();
-		}
-	Sleep(5000);
-	if (ticket > 0)
-		{
-		if (OrderSelect(ticket, SELECT_BY_TICKET, MODE_TRADES)) EAComment("Стоповый ордер в покупку выставлен!: " + OrderOpenPrice());
-		}
-		else EAComment("Ошибка выставления байстоп ордера!: " + GetLastError());
-		*/
 	}
-	return;
 }
 
 //+------------------------------------------------------------------+

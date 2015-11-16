@@ -1180,10 +1180,18 @@ void TrailingStairs()
 {
 	if(!TralOnPips)
 	   return;
-	double   PriceBEBuy  = PriceBE(OP_BUY),
+   
+	if (TrailingStart < TrailingStop)
+	{
+		EAComment("TrailingStart < TrailingStop (" + TrailingStart + "<" + TrailingStop + ")" +
+		" | From now TrailingStop = TrailingStart (" + TrailingStart + ")");
+		TrailingStop = TrailingStart;
+	}
+   
+	double   PriceBEBuy  = PriceBE(OP_BUY),		// для одного ордера == OrderOpenPrice() (с учетом комиссий и свопа)
 	         PriceBESell = PriceBE(OP_SELL);
 
-	for(int i = 0; i < OrdersTotal(); i++)
+	for (int i = OrdersTotal() - 1; i >= 0; i--)
 	{
 		if (!OrderSelect(i, SELECT_BY_POS, MODE_TRADES)) continue;
 		if (OrderMagicNumber() != Magic || OrderSymbol() != Symbol()) continue;
@@ -1192,11 +1200,13 @@ void TrailingStairs()
 
 		if (OrderType() == OP_BUY)
 		{
-			if ( ((UseTralOnlyInProfit && Bid - TrailingStart * Point > PriceBEBuy) || !UseTralOnlyInProfit) )
+			if (Bid - OrderOpenPrice() > TrailingStart * Point)											// Трал включается на расстоянии TrailingStart от цены открытия ордера
 			{
-			   newStopLossPrice = NormalizeDouble(Bid - TrailingStop * Point, Digits);
+				newStopLossPrice = NormalizeDouble(Bid - TrailingStop * Point, Digits);				 	// и ведется на расстоянии TrailingStop от цены
 
-			   if ((newStopLossPrice > OrderStopLoss() + TrailStep * Point) || OrderStopLoss() == 0)
+				if (UseTralOnlyInProfit && newStopLossPrice < PriceBEBuy) continue;						// Тралить только в профите, если UseTralOnlyInProfit == true;
+							
+				if ((newStopLossPrice > OrderStopLoss() + TrailStep * Point) || OrderStopLoss() == 0) 	// с шагом TrailStep
 				{
 					if (!OrderModify(OrderTicket(), OrderOpenPrice(), newStopLossPrice, OrderTakeProfit(), OrderExpiration()))
 					{
@@ -1205,13 +1215,17 @@ void TrailingStairs()
 					else EAComment("Order was modified. Standard trailing stop");
 				}
 			}
+			continue;
 		}
 		if (OrderType() == OP_SELL)
 		{
-			if ( ((UseTralOnlyInProfit && Ask + TrailingStart * Point < PriceBESell) || !UseTralOnlyInProfit) )
+			if (OrderOpenPrice() - Ask > TrailingStart * Point)											// Трал включается на расстоянии TrailingStart от цены открытия ордера
 			{
-				newStopLossPrice = NormalizeDouble(Ask + TrailingStop * Point, Digits);
-				if ((newStopLossPrice < OrderStopLoss() - TrailStep * Point) || OrderStopLoss() == 0)
+				newStopLossPrice = NormalizeDouble(Ask + TrailingStop * Point, Digits);					// и ведется на расстоянии TrailingStop от цены
+				
+				if (UseTralOnlyInProfit && newStopLossPrice > PriceBESell) continue;					// Тралить только в профите, если UseTralOnlyInProfit == true;
+				
+				if ((newStopLossPrice < OrderStopLoss() - TrailStep * Point) || OrderStopLoss() == 0)	// с шагом TrailStep
 				{
 					if (!OrderModify(OrderTicket(), OrderOpenPrice(), newStopLossPrice, OrderTakeProfit(), OrderExpiration()))
 					{
@@ -1220,6 +1234,7 @@ void TrailingStairs()
 					else EAComment("Order was modified. Standard trailing stop");
 				}
 			}
+			continue;
 		}
 	}
 }

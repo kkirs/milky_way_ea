@@ -48,22 +48,27 @@ extern double              MaxSL =                       100;                   
 extern double              MinSL =                       15;                                // Минимальный стоплосс
 extern string              SL008 =                       "===============================";
 
-extern string              TR001 =                       "====Настройки трейлинг стопа====";
-int                 BEPlus =                      3;                                 // Уровень прибыли в пунктах к безубытку
-int                 TrailStep =                   1;                                 // Шаг трейлинга (минимальное приращение)
-extern bool                UseTralOnlyInProfit =         true;                              // Тралить только в профите
-extern bool                TralOnPips =                  true;                              // Стандартный трейлинг
-extern int                 TrailingStop =                20;                                // Уровень трейлинга (расстояние от текущей цены)
-extern int                 TrailingStart =               30;                                // Уровень прибыли для включения трейлинга
-extern bool        TralFraktalOn =      true;
-extern int        FraktalTF =          240;
-extern int        FraktalBars =        5;
-extern int        FraktalOtstup =      3;
-extern bool        TralBarsOn =         true;
-extern int        BarsTF =             240;
-extern int        BarsUse =            2;
-extern int        BarsOtstup =         3;
-extern string              TR009 =                       "===============================";
+extern string				TR001				=		"====Настройки трейлинг стопа====";
+int							BEPlus				=		3;									// Уровень прибыли в пунктах к безубытку
+int							TrailStep			=		1;									// Шаг трейлинга (минимальное приращение)
+
+extern bool					UseTralOnlyInProfit	=		true;								// Тралить только в профите
+
+extern bool					TralOnPips			=		true;								// Стандартный трейлинг
+extern int					TrailingStop		=		20;									// Уровень трейлинга (расстояние от текущей цены)
+extern int					TrailingStart		=		30;									// Уровень прибыли для включения трейлинга
+
+extern bool					TralFraktalOn		=		true;								// Трейлинг по фракталам
+input ENUM_TIMEFRAMES		FraktalTF			=		240;								// Таймфрейм для поиска фракталов
+extern int					FraktalBars			=		5;
+extern int					FraktalOtstup		=		3;
+
+extern bool					TralBarsOn			=		true;								// Трейлинг по свечам
+input ENUM_TIMEFRAMES		BarsTF				=		240;								// Таймфрейм для поиска свечей 
+extern int					BarsUse				=		2;
+extern int					BarsOtstup			=		3;
+extern string				TR009				=		"===============================";
+
 extern string              MMSet01 =                     "====Манименеджмент====";
 extern int                 MaxRisk =                     10;                                 // Максимальный риск в процентах
 extern int                 LotVariant =                  1;                                  // Вариант расчета лота (1-фикс, 2-0.01 лота на MoneyForOneLot баксов, 3-фикс риск (в %)
@@ -1245,20 +1250,21 @@ void TrailingByShadows()
 {
    if(!TralBarsOn)
       return;
+  
+	if (BarsUse < 1 || BarsOtstup < 0)
+	{
+		EAComment("Trailing TrailingByShadows() Error.");
+		return;
+	}
 
-	double   PriceBUBuy     = PriceBE(OP_BUY),
-	         PriceBUSell    = PriceBE(OP_SELL),
+	double   PriceBEBuy     = PriceBE(OP_BUY),
+	         PriceBESell    = PriceBE(OP_SELL),
 	         new_extremum   = -1;
 
-	for (int j = 0; j < OrdersTotal(); j++)
+	for (int j = OrdersTotal() - 1; j >= 0; j--)
 	{
 		if (!OrderSelect(j, SELECT_BY_POS, MODE_TRADES)) continue;
 		if (OrderMagicNumber() != Magic || OrderSymbol() != Symbol()) continue;
-		if ((BarsUse<1) || (BarsOtstup<0) || ((BarsTF!=1) && (BarsTF!=5) && (BarsTF!=15) && (BarsTF!=30) && (BarsTF!=60) && (BarsTF!=240) && (BarsTF!=1440) && (BarsTF!=10080) && (BarsTF!=43200)))
-		{
-			EAComment("Trailing TrailingByShadows() Error.");
-			return;
-		}
 
 		int i;
 		double curr_extremum    = -1;
@@ -1274,17 +1280,19 @@ void TrailingByShadows()
 			}
 
 			newStopLossPrice  = NormalizeDouble(new_extremum - BarsOtstup * Point, Digits);
+			
+			if (UseTralOnlyInProfit && newStopLossPrice < PriceBEBuy) continue;		// Тралить только в профите, если UseTralOnlyInProfit == true;
 
 			if (  (newStopLossPrice > OrderStopLoss() || OrderStopLoss() == 0) &&
-			      (newStopLossPrice > PriceBUBuy) &&
                (newStopLossPrice < Bid - MarketInfo(Symbol(), MODE_STOPLEVEL) * Point) )
-         {
-			   if (!OrderModify(OrderTicket(), OrderOpenPrice(), newStopLossPrice, OrderTakeProfit(), OrderExpiration()))
-			   {
-			      EAComment("Error TrailingByShadows! Error " + GetLastError());
-			   }
-            else EAComment("Order was modified. High/Low trailing stop");
+			{
+				if (!OrderModify(OrderTicket(), OrderOpenPrice(), newStopLossPrice, OrderTakeProfit(), OrderExpiration()))
+				{
+					EAComment("Error TrailingByShadows! Error " + GetLastError());
+				}
+				else EAComment("Order was modified. High/Low trailing stop");
 			}
+			continue;
 		}
 		if (OrderType() == OP_SELL)
 		{
@@ -1298,8 +1306,9 @@ void TrailingByShadows()
 			int spread        = MarketInfo(Symbol(), MODE_SPREAD);
 			newStopLossPrice  = NormalizeDouble(new_extremum + (BarsOtstup + spread) * Point, Digits);
 
+			if (UseTralOnlyInProfit && newStopLossPrice > PriceBESell) continue;	// Тралить только в профите, если UseTralOnlyInProfit == true;
+			
 			if (  (newStopLossPrice < OrderStopLoss() || OrderStopLoss() == 0) &&
-			      (newStopLossPrice < PriceBUSell) &&
 			      (newStopLossPrice > Ask + MarketInfo(Symbol(), MODE_STOPLEVEL) * Point) )
 			{
 				if (!OrderModify(OrderTicket(), OrderOpenPrice(), newStopLossPrice, OrderTakeProfit(), OrderExpiration()))
@@ -1308,6 +1317,7 @@ void TrailingByShadows()
 				}
 				else EAComment("Order was modified. High/Low trailing stop");
 			}
+			continue;
 		}
 	}
 }
@@ -1318,28 +1328,28 @@ void TrailingByFractals()
 {
    if(!TralFraktalOn)
       return;
+  
+	if (FraktalBars <= 3 || FraktalOtstup < 0)
+	{
+		EAComment("Trailing TrailingByFractals() Error.");
+		return;
+	}
 
-	int      z,j,i;
+	int      z,i;
 	int      extr_n;
 
-	double   PriceBUBuy  =  PriceBE(OP_BUY),
-	         PriceBUSell =  PriceBE(OP_SELL),
+	double   PriceBEBuy  =  PriceBE(OP_BUY),
+	         PriceBESell =  PriceBE(OP_SELL),
 	         temp        =  -1;
 
 	int      after_x, be4_x;
 	int      ok_be4, ok_after;
 	int      sell_peak_n, buy_peak_n;
 
-	for (j = 0; j < OrdersTotal(); j++)
+	for (int j = OrdersTotal() - 1; j >= 0; j--)
 	{
 		if (!OrderSelect(j, SELECT_BY_POS, MODE_TRADES)) continue;
 		if (OrderMagicNumber() != Magic || OrderSymbol() != Symbol()) continue;
-		if ((FraktalBars<=3) || (FraktalOtstup<0) || (OrderTicket()==0) || ((FraktalTF!=1) && (FraktalTF!=5) && (FraktalTF!=15) && (FraktalTF!=30) && (FraktalTF!=60) &&
-					(FraktalTF!=240) && (FraktalTF!=1440) && (FraktalTF!=10080) && (FraktalTF!=43200)))
-		{
-			EAComment("Trailing TrailingByFractals() Error.");
-			return;
-		}
 
 		temp = FraktalBars;
 
@@ -1387,9 +1397,10 @@ void TrailingByFractals()
 			}
 
 			newStopLossPrice = NormalizeDouble(iLow(Symbol(), FraktalTF, sell_peak_n) - FraktalOtstup * Point, Digits);
+			
+			if (UseTralOnlyInProfit && newStopLossPrice < PriceBEBuy) continue; // Тралить только в профите, если UseTralOnlyInProfit == true;
 
 			if (  (newStopLossPrice > OrderStopLoss() || OrderStopLoss() == 0) &&
-			      (newStopLossPrice > PriceBUBuy) &&
 			      (newStopLossPrice < Bid - MarketInfo(Symbol(), MODE_STOPLEVEL) * Point) )
 			{
 				if (!OrderModify(OrderTicket(), OrderOpenPrice(), newStopLossPrice, OrderTakeProfit(), OrderExpiration()))
@@ -1398,6 +1409,7 @@ void TrailingByFractals()
 				}
 				else EAComment("Order was modified. Fractal trailing stop");
 			}
+			continue;
 		}
 		if (OrderType() == OP_SELL)
 		{
@@ -1432,8 +1444,9 @@ void TrailingByFractals()
 
 			newStopLossPrice = NormalizeDouble(iHigh(Symbol(), FraktalTF, buy_peak_n) + (FraktalOtstup + MarketInfo(Symbol(), MODE_SPREAD)) * Point, Digits);
 
+			if (UseTralOnlyInProfit && newStopLossPrice > PriceBESell) continue; // Тралить только в профите, если UseTralOnlyInProfit == true;
+				
 			if (  (newStopLossPrice < OrderStopLoss() || OrderStopLoss() == 0) &&
-               (newStopLossPrice < PriceBUSell) &&
                (newStopLossPrice > Ask + MarketInfo(Symbol(), MODE_STOPLEVEL) * Point) )
 			{
 				if (!OrderModify(OrderTicket(), OrderOpenPrice(), newStopLossPrice, OrderTakeProfit(), OrderExpiration()))
@@ -1442,6 +1455,7 @@ void TrailingByFractals()
 				}
 				else EAComment("Order was modified. Fractal trailing stop");
 			}
+			continue;
 		}
 	}
 }

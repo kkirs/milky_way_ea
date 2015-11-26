@@ -221,39 +221,53 @@ int Signal()
 	double bb1_high_1    = iBands( Symbol(), Period(), BBPeriod, 1, 0, 0, MODE_UPPER, 1 );
 	double bb1_low_1     = iBands( Symbol(), Period(), BBPeriod, 1, 0, 0, MODE_LOWER, 1 );
 
-	double Dem=iDeMarker(Symbol(),Period(),DemPer,1);
+	double Dem           = iDeMarker(Symbol(), Period(), DemPer, 1);
 
-	if( !AllRisk() && OrdExist( OP_BUY ) == 0 && OrdExist( OP_BUYSTOP ) == 0 && OrdExist( OP_SELL ) == 0 && OrdExist( OP_SELLSTOP ) == 0 ) // Если не превышен риск и нет никаких ордеров
+	if (OrdExist(OP_BUY) == 0 && OrdExist(OP_BUYSTOP) == 0 && OrdExist(OP_SELL) == 0 && OrdExist(OP_SELLSTOP) == 0) // Если нет никаких ордеров
 	{
-		if( High1 - Low1 < MaxCandle * PricePoint )                    // Если размер сигнальной свечи [1] не больше порога
+		if (High1 - Low1 < MaxCandle * Point)			// Если размер сигнальной свечи [1] не больше порога
 		{
-			if( High2 - Low2 < MaxCandle * PricePoint )                 // Если размер свечи перед сигнальной [2] не больше порога
+			if (High2 - Low2 < MaxCandle * Point)		// Если размер свечи перед сигнальной [2] не больше порога
 			{
 				// Сигнал в покупку
-				if( High2 > High1 && Low2 > Low1 && Close1 > Low1 + 0.5 * ( High1 - Low1 ) && Close1 < bb1_high_1 && Close1 > bb1_middle_1 && OzymandiasFilter( 1 ))
+				if (High2 > High1 && Low2 > Low1 && Close1 > Low1 + 0.5 * ( High1 - Low1 ) && Close1 < bb1_high_1 && Close1 > bb1_middle_1 && OzymandiasFilter( 1 ))
 				{
-					if(!DemFilter||(DemFilter&&Dem<DemB))
+					if (!DemFilter || (DemFilter && Dem < DemB))
 					{
-						signal = 1;
-						DrawFlag( 1 );
 						EAComment("Buy signal detected.");
+						
+						Sleep(5000);	// Пауза на 5 секунд перед анализом риска. (Сделано для того, чтобы остальные работающие советники успели модифицировать или закрыть ордера)
+						if (!AllRisk())	// Риск приемлем, устанавливаем сигнал
+						{
+							signal = 1;
+							DrawFlag( 1 );
+						}
+						else EAComment("Buy order cannot be open | MaxRisk achieved"); // Риск превышен
+						return(signal);
 					}
 				}
 
-				// Сигнал в продажу, если нет никаких ордеров
-				if( High2 < High1 && Low2 < Low1 && Close1 < High1 - 0.5 * ( High1 - Low1 ) && Close1 > bb1_low_1 && Close1 < bb1_middle_1 && OzymandiasFilter( -1 ))
+				// Сигнал в продажу
+				if (High2 < High1 && Low2 < Low1 && Close1 < High1 - 0.5 * ( High1 - Low1 ) && Close1 > bb1_low_1 && Close1 < bb1_middle_1 && OzymandiasFilter( -1 ))
 				{
-					if(!DemFilter||(DemFilter&&Dem>1-DemB))
+					if (!DemFilter || (DemFilter && Dem > 1 - DemB))
 					{
-						signal = - 1;
-						DrawFlag( -1 );
 						EAComment("Sell signal detected.");
+						
+						Sleep(5000);	// Пауза на 5 секунд перед анализом риска. (Сделано для того, чтобы остальные работающие советники успели модифицировать или закрыть ордера)
+						if (!AllRisk())	// Риск приемлем, устанавливаем сигнал
+						{
+							signal = -1;
+							DrawFlag( -1 );
+						}
+						else EAComment("Sell order cannot be open | MaxRisk achieved"); // Риск превышен
+						return(signal);
 					}
 				}
 			}
 		}
 	}
-	return( signal );
+	return(signal);
 }
 //+------------------------------------------------------------------+
 

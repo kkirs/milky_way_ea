@@ -274,7 +274,7 @@ double GetPoint()
 //+------------------------------------------------------------------+
 
 //+------------------------------------------------------------------+
-//| Сигнал на выход из позиций                                       |
+//| Сигнал на выход из позиции                                       |
 //+------------------------------------------------------------------+
 
 int SignalExit()
@@ -286,77 +286,93 @@ int SignalExit()
 	double bb2_high_2 = iBands( Symbol(), Period(), BBPeriod, 2, 0, 0, MODE_UPPER, 2 );
 	double bb2_low_1  = iBands( Symbol(), Period(), BBPeriod, 2, 0, 0, MODE_LOWER, 1 );
 	double bb2_low_2  = iBands( Symbol(), Period(), BBPeriod, 2, 0, 0, MODE_LOWER, 2 );
-	double bb2_mid_1  = iBands( Symbol(), Period(), BBPeriod, 2, 0, 0, MODE_MAIN, 1 );
+	//double bb2_mid_1  = iBands( Symbol(), Period(), BBPeriod, 2, 0, 0, MODE_MAIN,  1 );
 	double Close1     = iClose( Symbol(), Period(), 1 );
 	double Close2     = iClose( Symbol(), Period(), 2 );
-	double Stoch1     = iStochastic(Symbol(), Period(), KPer, DPer, SPer, MODE_SMA, 0, MODE_MAIN, 1);
-	double Stoch2     = iStochastic(Symbol(), Period(), KPer, DPer, SPer, MODE_SMA, 0, MODE_MAIN, 2);
-	double MACD1      = iMACD(Symbol(), Period(), FPer, SPEr, SIPer, PRICE_CLOSE, MODE_MAIN, 1);
-	double MACD2      = iMACD(Symbol(), Period(), FPer, SPEr, SIPer, PRICE_CLOSE, MODE_MAIN, 2);
-	double ATR        = iATR (Symbol(), Period(), ATREPer, 1);
 
-	if( OrdExist( OP_BUY ) > 0 && Close2 >  bb2_high_2 && Close1 < bb2_high_1 )
+	if (OrdExist( OP_BUY ) > 0 && Close2 >  bb2_high_2 && Close1 < bb2_high_1)
 	{
 		signal = 1;
 		DrawFlag( 2 );
-		EAComment("Signal to close buy order detected.");
+		EAComment("Signal to close buy order detected | Bollinger Bands signal");
+		return(signal);
 	}
-	if( OrdExist( OP_SELL ) > 0 && Close2 < bb2_low_2 && Close1 >  bb2_low_1 )
+	
+	if (OrdExist( OP_SELL ) > 0 && Close2 < bb2_low_2 && Close1 >  bb2_low_1)
 	{
 		signal = -1;
 		DrawFlag( -2 );
-		EAComment("Signal to close sell order detected.");
+		EAComment("Signal to close sell order detected | Bollinger Bands signal");
+		return(signal);
 	}
-	if(StochExit)
+	
+	if (StochExit)
 	{
-		if( OrdExist( OP_BUY ) > 0 && Stoch2 >  100-StochB && Stoch1 < 100-StochB  )
+		double Stoch1 = iStochastic(Symbol(), Period(), KPer, DPer, SPer, MODE_SMA, 0, MODE_MAIN, 1);
+		double Stoch2 = iStochastic(Symbol(), Period(), KPer, DPer, SPer, MODE_SMA, 0, MODE_MAIN, 2);
+	
+		if (OrdExist( OP_BUY ) > 0 && Stoch2 >  100-StochB && Stoch1 < 100-StochB)
 		{
 			signal = 1;
 			DrawFlag( 2 );
-			EAComment("Signal to close buy order detected.");
+			EAComment("Signal to close buy order detected | Stochastic signal");
+			return(signal);
 		}
-		if( OrdExist( OP_SELL ) > 0 && Stoch2 < StochB && Stoch1 >  StochB )
+		if (OrdExist( OP_SELL ) > 0 && Stoch2 < StochB && Stoch1 >  StochB)
 		{
 			signal = -1;
 			DrawFlag( -2 );
-			EAComment("Signal to close sell order detected.");
+			EAComment("Signal to close sell order detected | Stochastic signal");
+			return(signal);
 		}
 	}
-	if(MACDExit)
+	
+	if (MACDExit)
 	{
-		if( OrdExist( OP_BUY ) > 0 && MACD2 >  0 && MACD1 < 0 )
+		double MACD1 = iMACD(Symbol(), Period(), FPer, SPEr, SIPer, PRICE_CLOSE, MODE_MAIN, 1);
+		double MACD2 = iMACD(Symbol(), Period(), FPer, SPEr, SIPer, PRICE_CLOSE, MODE_MAIN, 2);
+		
+		if (OrdExist( OP_BUY ) > 0 && MACD2 >  0 && MACD1 < 0)
 		{
 			signal = 1;
 			DrawFlag( 2 );
-			EAComment("Signal to close buy order detected.");
+			EAComment("Signal to close buy order detected | MACD signal");
+			return(signal);
 		}
-		if( OrdExist( OP_SELL ) > 0 && MACD2 < 0 && MACD1 >  0 )
+		if (OrdExist( OP_SELL ) > 0 && MACD2 < 0 && MACD1 >  0)
 		{
 			signal = -1;
 			DrawFlag( -2 );
-			EAComment("Signal to close sell order detected.");
+			EAComment("Signal to close sell order detected | MACD signal");
+			return(signal);
 		}
 	}
-	if(VolExit)
+	
+	if (VolExit)
 	{
-		if( OrdExist( OP_BUY ) > 0 && MathAbs(Close[1]-Open[1])<ATR*BodyCoef&&High[1]-Low[1]<ATR*ShadowCoef
+		double ATR = iATR (Symbol(), Period(), ATREPer, 1);
+		
+		if (OrdExist( OP_BUY ) > 0 && MathAbs(Close[1]-Open[1])<ATR*BodyCoef&&High[1]-Low[1]<ATR*ShadowCoef
 				&& MathAbs(Close[2]-Open[2])<ATR*BodyCoef&&High[2]-Low[2]<ATR*ShadowCoef
 				&& MathAbs(Close[3]-Open[3])<ATR*BodyCoef&&High[3]-Low[3]<ATR*ShadowCoef)
 		{
 			signal = 1;
 			DrawFlag( 2 );
-			EAComment("Signal to close buy order detected.");
+			EAComment("Signal to close buy order detected | ATR signal");
+			return(signal);
 		}
-		if( OrdExist( OP_SELL ) > 0 && MathAbs(Close[1]-Open[1])<ATR*BodyCoef&&High[1]-Low[1]<ATR*ShadowCoef
+		if (OrdExist( OP_SELL ) > 0 && MathAbs(Close[1]-Open[1])<ATR*BodyCoef&&High[1]-Low[1]<ATR*ShadowCoef
 				&& MathAbs(Close[2]-Open[2])<ATR*BodyCoef&&High[2]-Low[2]<ATR*ShadowCoef
 				&& MathAbs(Close[3]-Open[3])<ATR*BodyCoef&&High[3]-Low[3]<ATR*ShadowCoef)
 		{
 			signal = -1;
 			DrawFlag( -2 );
-			EAComment("Signal to close sell order detected.");
+			EAComment("Signal to close sell order detected | ATR signal");
+			return(signal);
 		}
 	}
-	return( signal );
+	
+	return(signal);
 }
 //+------------------------------------------------------------------+
 

@@ -8,7 +8,7 @@
 #property version   "3.24"
 //#property strict
 
-string                     ExpertName =                  "Milky way EA v3.24 m05";     // modification 5
+string                     ExpertName =                  "Milky way EA v3.24 m06";     // modification 6
 
 extern string              Settings01 =                  "====Настройки входа====";
 extern int                 BBPeriod =                    20;                           // Период Bollinger Bands

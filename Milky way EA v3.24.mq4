@@ -94,6 +94,8 @@ datetime prevtime=Time[0];
 bool NewCandle=false;
 
 string obj_name;
+
+const int MARKET_OPEN_MINUTE = 5; // Задержка в работе эксперта при смене дня в 00.00 в минутах
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
 //+------------------------------------------------------------------+
@@ -163,6 +165,12 @@ void OnDeinit( const int reason )
 //+------------------------------------------------------------------+
 void OnTick()
 {
+	int hour    = TimeHour(TimeCurrent());
+	int minute  = TimeMinute(TimeCurrent());
+
+	if ( hour == 0 && minute < MARKET_OPEN_MINUTE )
+		return;
+
 	NewCandle = false;
 	if( prevtime != Time[0] )
 	{

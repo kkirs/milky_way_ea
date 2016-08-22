@@ -8,7 +8,7 @@
 #property version   "3.24"
 //#property strict
 
-string                     ExpertName =                  "Milky way EA v3.24 m06";     // modification 6
+string                     ExpertName =                  "Milky way EA v3.24 m07cand"; // modification 7 Candidate
 
 extern string              Settings01 =                  "====Настройки входа====";
 extern int                 BBPeriod =                    20;                           // Период Bollinger Bands
@@ -610,9 +610,10 @@ void CloseOrd()
 	}
 }
 
-//+--------------------------------------------------------------------------------------------+
-//| Расчет максимального риска в процентах для ВСЕХ позиций на счете, имеющих уровень StopLoss |
-//+--------------------------------------------------------------------------------------------+
+//+---------------------------------------------------------------------------------------------------------+
+//| Расчет максимального риска в процентах для ВСЕХ уже открытых позиций на счете, имеющих уровень StopLoss +
+//| Отложенные ордера не учитываются                                                                        +
+//+---------------------------------------------------------------------------------------------------------+
 bool AllRisk()
 {
 	double currRiskInPercent   = 0;
@@ -621,16 +622,23 @@ bool AllRisk()
 	{
 		if (!OrderSelect(i, SELECT_BY_POS, MODE_TRADES)) continue;
 		if (OrderStopLoss() == 0) continue;
+		
+		double currSymbolPoint  = MarketInfo(OrderSymbol(), MODE_POINT);
+		if (currSymbolPoint == 0)
+		{
+			EAComment("Error getting `Point` value for symbol " + OrderSymbol() + " in AllRisk() calculation | Skipping MaxRisk check");
+			return(true);
+		}
 
 		double distanceInPoints = 0;
 		if (OrderType() == OP_SELL && OrderOpenPrice() < OrderStopLoss())
 		{
-			distanceInPoints  = (OrderStopLoss() - OrderOpenPrice()) / Point;
+			distanceInPoints  = (OrderStopLoss() - OrderOpenPrice()) / currSymbolPoint;
 			currRiskInPercent = currRiskInPercent + (distanceInPoints * OrderLots() / AccountBalance()) * 100;
 		}
 		if (OrderType() == OP_BUY  && OrderOpenPrice() > OrderStopLoss())
 		{
-			distanceInPoints  = (OrderOpenPrice() - OrderStopLoss()) / Point;
+			distanceInPoints  = (OrderOpenPrice() - OrderStopLoss()) / currSymbolPoint;
 			currRiskInPercent = currRiskInPercent + (distanceInPoints * OrderLots() / AccountBalance()) * 100;
 		}
 	}

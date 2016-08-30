@@ -8,7 +8,7 @@
 #property version   "3.24"
 //#property strict
 
-string                     ExpertName =                  "Milky way EA v3.24 m07cand"; // modification 7 Candidate
+string                     ExpertName =                  "Milky way EA v3.24 m07cand_2"; // modification 7 Candidate 2
 
 extern string              Settings01 =                  "====Настройки входа====";
 extern int                 BBPeriod =                    20;                           // Период Bollinger Bands
@@ -485,36 +485,40 @@ void OpenOrder(const int direction)
 
 	if (direction == OP_SELL)
 	{
-		OpenPrice = Bid;
-		StopLoss  = StopLoss(OP_SELL, OpenPrice);
-		SL        = NormalizeDouble((StopLoss - OpenPrice) / Point, 0);
-		if (SL > MaxSL)
-		{
-			if (!UseMaxSL)
-			{
-				EAComment("Стоплосс слишком большой!");
-				return;
-			}
-			if (UseMaxSL)
-			{
-				StopLoss	= NormalizeDouble(OpenPrice + MaxSL * PricePoint, Digits());
-				SL			= MaxSL;
-				EAComment("Стоплосс слишком большой! Параметр UseMaxSL включен. Используем MaxSL=" + MaxSL + " пунктов.");
-			}
-		}
-		if (SL < MinSL)
-		{
-			StopLoss	= NormalizeDouble(OpenPrice + MinSL * PricePoint, Digits());
-			SL			= MinSL;
-		}
-		Lot = Lots(SL, OpenPrice);
 		for (n = 1; n <= MathMax(1, NumOfTry); n++)
 		{
+			RefreshRates();
+			
+			OpenPrice = NormalizeDouble(Bid, Digits);
+			StopLoss  = StopLoss(OP_SELL, OpenPrice);
+			SL        = NormalizeDouble((StopLoss - OpenPrice) / Point, 0);
+
+			if (SL > MaxSL)
+			{
+				if (!UseMaxSL)
+				{
+					EAComment("Стоплосс слишком большой!");
+					return;
+				}
+				if (UseMaxSL)
+				{
+					StopLoss	= NormalizeDouble(OpenPrice + MaxSL * PricePoint, Digits());
+					SL			= MaxSL;
+					EAComment("Стоплосс слишком большой! Параметр UseMaxSL включен. Используем MaxSL=" + MaxSL + " пунктов.");
+				}
+			}
+			if (SL < MinSL)
+			{
+				StopLoss	= NormalizeDouble(OpenPrice + MinSL * PricePoint, Digits());
+				SL			= MinSL;
+			}
+			Lot = Lots(SL, OpenPrice);			
+			
 			ticket = OrderSend(Symbol(), OP_SELL, Lot, OpenPrice, Slippage, StopLoss, 0, ExpertName + " Magic:" + IntegerToString(Magic), Magic, 0, Red);
 			if (ticket >= 0) break;
 			Sleep(1000);
-			RefreshRates();
 		}
+
 		Sleep(5000);
 		if (ticket < 0) EAComment("Error of sending sell order!: " + GetLastError());
 		else
@@ -526,36 +530,40 @@ void OpenOrder(const int direction)
 
 	if (direction == OP_BUY)
 	{
-		OpenPrice = Ask;
-		StopLoss  = StopLoss(OP_BUY, OpenPrice);
-		SL        = NormalizeDouble((OpenPrice - StopLoss) / Point, 0);
-		if (SL > MaxSL)
-		{
-			if (!UseMaxSL)
-			{
-				EAComment("Стоплосс слишком большой!");
-				return;
-			}
-			if (UseMaxSL)
-			{
-				StopLoss	= NormalizeDouble(OpenPrice - MaxSL * PricePoint, Digits());
-				SL			= MaxSL;
-				EAComment("Стоплосс слишком большой! Параметр UseMaxSL включен. Используем MaxSL=" + MaxSL + " пунктов.");
-			}
-		}
-		if (SL < MinSL)
-		{
-			StopLoss	= NormalizeDouble(OpenPrice - MinSL * PricePoint, Digits());
-			SL			= MinSL;
-		}
-		Lot = Lots(SL, OpenPrice);
 		for (n = 1; n <= MathMax(1, NumOfTry); n++)
 		{
+			RefreshRates();
+			
+			OpenPrice = NormalizeDouble(Ask, Digits);
+			StopLoss  = StopLoss(OP_BUY, OpenPrice);
+			SL        = NormalizeDouble((OpenPrice - StopLoss) / Point, 0);
+
+			if (SL > MaxSL)
+			{
+				if (!UseMaxSL)
+				{
+					EAComment("Стоплосс слишком большой!");
+					return;
+				}
+				if (UseMaxSL)
+				{
+					StopLoss	= NormalizeDouble(OpenPrice - MaxSL * PricePoint, Digits());
+					SL			= MaxSL;
+					EAComment("Стоплосс слишком большой! Параметр UseMaxSL включен. Используем MaxSL=" + MaxSL + " пунктов.");
+				}
+			}
+			if (SL < MinSL)
+			{
+				StopLoss	= NormalizeDouble(OpenPrice - MinSL * PricePoint, Digits());
+				SL			= MinSL;
+			}
+			Lot = Lots(SL, OpenPrice);
+			
 			ticket = OrderSend(Symbol(), OP_BUY, Lot, OpenPrice, Slippage, StopLoss, 0, ExpertName + " Magic:" + IntegerToString( Magic ), Magic, 0, Blue);
 			if (ticket >= 0) break;
 			Sleep(1000);
-			RefreshRates();
 		}
+
 		Sleep(5000);
 		if (ticket < 0) EAComment("Error of sending buy order!: " + GetLastError());
 		else

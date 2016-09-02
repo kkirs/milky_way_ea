@@ -3,12 +3,12 @@
 //|                                                                  |
 //|                                                                  |
 //+------------------------------------------------------------------+
-#property copyright "Copyright 2014, Silentspec Transcontinental Intergalactic Corp"
+#property copyright "Copyright 2014-2016, Silentspec Transcontinental Intergalactic Corp"
 #property link      "http://tradelikeapro.ru/"
 #property version   "3.24"
 //#property strict
 
-string                     ExpertName =                  "Milky way EA v3.24 m07cand_2"; // modification 7 Candidate 2
+string                     ExpertName =                  "Milky way EA v3.24 m07";		// modification 7
 
 extern string              Settings01 =                  "====Settings for opening orders====";
 extern int                 BBPeriod =                    20;                           // Период Bollinger Bands

@@ -10,7 +10,7 @@
 
 string                     ExpertName =                  "Milky way EA v3.24 m07cand_2"; // modification 7 Candidate 2
 
-extern string              Settings01 =                  "====Настройки входа====";
+extern string              Settings01 =                  "====Settings for opening orders====";
 extern int                 BBPeriod =                    20;                           // Период Bollinger Bands
 extern int                 MaxCandle =                   180;                          // Максимально допустимая сигнальная свеча
 extern bool                OzymandiasFilter =            true;                         // Включить фильтр Озимандиас
@@ -20,8 +20,8 @@ extern bool                DemFilter =                   true;                  
 extern int                 DemPer =                      14;
 extern double              DemB =                        0.1;
 extern string              Settings02 =                  "===============================";
-extern string              Exits01 =                     "====Настройки выхода====";
-extern string              Exits02 =                     "-Стохастик";
+extern string              Exits01 =                     "====Settings for closing orders====";
+extern string              Exits02 =                     "-Stochastic";
 extern bool                StochExit =                   true;                         // Включить выход по стоху
 extern int                 KPer =                        11;
 extern int                 DPer =                        3;
@@ -32,14 +32,14 @@ extern bool                MACDExit =                    true;                  
 extern int                 FPer =                        1;
 extern int                 SPEr =                        1;
 int                 SIPer =                       1;
-extern string              Exits04 =                     "-По волатильности";
+extern string              Exits04 =                     "-Volatility";
 extern bool                VolExit =                     true;                         // Включить выход по волатильности
 extern int                 ATREPer =                     1;
 extern double              BodyCoef =                    0.5;
 extern double              ShadowCoef =                  0.5;
 extern string              Exits05 =                     "===============================";
 
-extern string              SL001 =                       "====Настройки варианта стопа====";
+extern string              SL001 =                       "====StopLoss placement settings====";
 input ENUM_TIMEFRAMES      ExtrTimeframe =               0;                                 // Таймфрейм поиска экстремума для стоплосса
 extern int                 HistorySL =                   10;                                // Поиск экстремума для стоплосса
 extern int                 OtstupSL =                    60;                                // Отступ от хая/лоя в пунктах
@@ -48,7 +48,7 @@ extern double              MaxSL =                       100;                   
 extern double              MinSL =                       15;                                // Минимальный стоплосс
 extern string              SL008 =                       "===============================";
 
-extern string				TR001				=		"====Настройки трейлинг стопа====";
+extern string				TR001				=		"====Trailing Stop settings====";
 int							BEPlus				=		3;									// Уровень прибыли в пунктах к безубытку
 int							TrailStep			=		1;									// Шаг трейлинга (минимальное приращение)
 
@@ -69,7 +69,7 @@ extern int					BarsUse				=		2;
 extern int					BarsOtstup			=		3;
 extern string				TR009				=		"===============================";
 
-extern string              MMSet01 =                     "====Манименеджмент====";
+extern string              MMSet01 =                     "====Money management====";
 extern int                 MaxRisk =                     10;                                 // Максимальный риск в процентах
 extern int                 LotVariant =                  1;                                  // Вариант расчета лота (1-фикс, 2-0.01 лота на MoneyForOneLot баксов, 3-фикс риск (в %)
 extern double              FixLot =                      0.1;
@@ -77,7 +77,7 @@ extern int                 MoneyForOneLot =              100;
 extern double              Risk =                        3;
 extern string              MMSet02 =                     "===============================";
 
-extern string              Comment01 =                   "====Информация и сервисные настройки====";
+extern string              Comment01 =                   "====Information and service settings====";
 extern int                 Slippage =                    1;
 extern bool                UsePrint =                    false;
 extern int                 Magic =                       0;                                 // Мэджик, если 0, бот генерит его сам.
@@ -120,7 +120,7 @@ int OnInit()
 	if (LotStep==1)    LotDecimal=0;
 	if (LotStep==0.1)  LotDecimal=1;
 	if (LotStep==0.01) LotDecimal=2;
-	EAComment("Эксперт " + ExpertName + " начал работу на паре " + Symbol() + " с мэджиком " + IntegerToString( Magic ) );
+	EAComment("Expert advisor" + ExpertName + " has been started on pair " + Symbol() + " with magic number " + IntegerToString( Magic ) );
 	return ( INIT_SUCCEEDED );
 }
 
@@ -133,28 +133,28 @@ void OnDeinit( const int reason )
 	switch ( _UninitReason )
 	{
 	case REASON_ACCOUNT:
-		EAComment("Советник остановлен по причине смены аккаунта.");
+		EAComment("Expert advisor is stopped due to change of account.");
 		break;
 	case REASON_CHARTCHANGE:
-		EAComment("Советник остановлен по причине смены символа или таймфрейма.");
+		EAComment("Expert advisor is stopped due to change of symbol or timeframe.");
 		break;
 	case REASON_CHARTCLOSE:
-		EAComment("Советник остановлен по причине закрытия графика.");
+		EAComment("Expert advisor is stopped due to closing the chart.");
 		break;
 	case REASON_PARAMETERS:
-		EAComment("Советник остановлен по причине изменения исходных параметров.");
+		EAComment("Expert advisor is stopped due to change of initial parameters.");
 		break;
 	case REASON_RECOMPILE:
-		EAComment("Советник остановлен по причине декомпиляции.");
+		EAComment("Expert advisor is stopped due to recompiling.");
 		break;
 	case REASON_REMOVE:
-		EAComment("Советник остановлен по причине удаления с графика.");
+		EAComment("Expert advisor is stopped due to removing from the chart.");
 		break;
 	case REASON_TEMPLATE:
-		EAComment("Советник остановлен по причине загрузки нового шаблона.");
+		EAComment("Expert advisor is stopped due to loading a new template.");
 		break;
 	default:
-		EAComment("Советник остановлен");
+		EAComment("Expert advisor is stopped.");
 	}
 }
 
@@ -495,17 +495,15 @@ void OpenOrder(const int direction)
 
 			if (SL > MaxSL)
 			{
-				if (!UseMaxSL)
+				if (UseMaxSL == false)
 				{
-					EAComment("Стоплосс слишком большой!");
+					EAComment("StopLoss is too large!");
 					return;
 				}
-				if (UseMaxSL)
-				{
-					StopLoss	= NormalizeDouble(OpenPrice + MaxSL * PricePoint, Digits());
-					SL			= MaxSL;
-					EAComment("Стоплосс слишком большой! Параметр UseMaxSL включен. Используем MaxSL=" + MaxSL + " пунктов.");
-				}
+
+				StopLoss	= NormalizeDouble(OpenPrice + MaxSL * PricePoint, Digits());
+				SL			= MaxSL;
+				EAComment("StopLoss is too large! Input parameter `UseMaxSL` is enabled, so use MaxSL=" + MaxSL + " points.");
 			}
 			if (SL < MinSL)
 			{
@@ -540,17 +538,15 @@ void OpenOrder(const int direction)
 
 			if (SL > MaxSL)
 			{
-				if (!UseMaxSL)
+				if (UseMaxSL == false)
 				{
-					EAComment("Стоплосс слишком большой!");
+					EAComment("StopLoss is too large!");
 					return;
 				}
-				if (UseMaxSL)
-				{
-					StopLoss	= NormalizeDouble(OpenPrice - MaxSL * PricePoint, Digits());
-					SL			= MaxSL;
-					EAComment("Стоплосс слишком большой! Параметр UseMaxSL включен. Используем MaxSL=" + MaxSL + " пунктов.");
-				}
+
+				StopLoss	= NormalizeDouble(OpenPrice - MaxSL * PricePoint, Digits());
+				SL			= MaxSL;
+				EAComment("StopLoss is too large! Input parameter `UseMaxSL` is enabled, so use MaxSL=" + MaxSL + " points.");
 			}
 			if (SL < MinSL)
 			{
@@ -792,12 +788,12 @@ double NormalizeLot(double Lot)
 	if (NormLot<MinLot)
 	{
 		NormLot=MinLot;
-		EAComment("Лот меньше минимального. Установлен минимальный.");
+		EAComment("Lot < minLot, so use Lot=minLot=" + MinLot + ".");
 	}
 	if (NormLot>MaxLot)
 	{
 		NormLot=MaxLot;
-		EAComment("Лот больше максимального. Установлен максимальный.");
+		EAComment("Lot > maxLot, so use Lot=maxLot=" + MaxLot + ".");
 	}
 	return (NormLot);
 }
@@ -905,14 +901,14 @@ void MainPanel()
 
 	CreateLabel("InfoPanel1",0,0,0.1*ChartY,0.30*ChartX,0.18*ChartY,BodyMenuColor,BoarderColor,0,CORNER_LEFT_UPPER,BORDER_FLAT); // Основная панель
 	CreateLabel("InfoPanel2",0,0,0.05*ChartY,0.30*ChartX,0.05*ChartY,TopMenuColor,BoarderColor,0,CORNER_LEFT_UPPER,BORDER_FLAT);// Панель с названием
-	CreateText("Expert Name",0,0.11*ChartX,0.06*ChartY,CORNER_LEFT_UPPER,ExpertName,"Arial",Shrift01,TopShriftColor);
+	CreateText("Expert Name",0,0.11*ChartX,0.06*ChartY,	CORNER_LEFT_UPPER,	ExpertName,	"Arial",Shrift01,TopShriftColor);
 
-	CreateText("Balance",0,0.01*ChartX,0.11*ChartY,CORNER_LEFT_UPPER,"Баланс: "+DoubleToString(AccountBalance(),2)+" "+AccountCurrency(),"Arial",Shrift02,BodyShriftColor);
-	CreateText("Equity",0,0.15*ChartX,0.11*ChartY,CORNER_LEFT_UPPER,"Эквити: "+DoubleToString(AccountEquity(),2)+" "+AccountCurrency(),"Arial",Shrift02,BodyShriftColor);
-	CreateText("Free",0,0.01*ChartX,0.14*ChartY,CORNER_LEFT_UPPER,"Свободно: "+DoubleToString(AccountInfoDouble(ACCOUNT_FREEMARGIN),2)+" "+AccountCurrency(),"Arial",Shrift02,BodyShriftColor);
-	CreateText("Margin",0,0.15*ChartX,0.14*ChartY,CORNER_LEFT_UPPER,"Залог: "+DoubleToString(AccountInfoDouble(ACCOUNT_MARGIN),2)+" "+AccountCurrency(),"Arial",Shrift02,BodyShriftColor);
-	CreateText("MarginLevel",0,0.01*ChartX,0.17*ChartY,CORNER_LEFT_UPPER,"Ур. маржи: "+DoubleToString(AccountInfoDouble(ACCOUNT_MARGIN_LEVEL),2)+" %","Arial",Shrift02,BodyShriftColor);
-	CreateText("Profit1",0,0.15*ChartX,0.17*ChartY,CORNER_LEFT_UPPER,"Тек. прибыль: "+DoubleToString(AccountInfoDouble(ACCOUNT_PROFIT),2)+" "+AccountCurrency(),"Arial",Shrift02,BodyShriftColor);
+	CreateText("Balance",		0,0.01*ChartX,0.11*ChartY,	CORNER_LEFT_UPPER,	"Balance: "				+ DoubleToString(AccountBalance(),2)+" "+AccountCurrency(),"Arial",Shrift02,BodyShriftColor);
+	CreateText("Equity",		0,0.15*ChartX,0.11*ChartY,	CORNER_LEFT_UPPER,	"Equity: "				+ DoubleToString(AccountEquity(),2)+" "+AccountCurrency(),"Arial",Shrift02,BodyShriftColor);
+	CreateText("Free",			0,0.01*ChartX,0.14*ChartY,	CORNER_LEFT_UPPER,	"Free: "				+ DoubleToString(AccountInfoDouble(ACCOUNT_FREEMARGIN),2)+" "+AccountCurrency(),"Arial",Shrift02,BodyShriftColor);
+	CreateText("Margin",		0,0.15*ChartX,0.14*ChartY,	CORNER_LEFT_UPPER,	"Margin: "				+ DoubleToString(AccountInfoDouble(ACCOUNT_MARGIN),2)+" "+AccountCurrency(),"Arial",Shrift02,BodyShriftColor);
+	CreateText("MarginLevel",	0,0.01*ChartX,0.17*ChartY,	CORNER_LEFT_UPPER,	"MarginLevel: "			+ DoubleToString(AccountInfoDouble(ACCOUNT_MARGIN_LEVEL),2)+" %","Arial",Shrift02,BodyShriftColor);
+	CreateText("Profit1",		0,0.15*ChartX,0.17*ChartY,	CORNER_LEFT_UPPER,	"Account Profit: "		+ DoubleToString(AccountInfoDouble(ACCOUNT_PROFIT),2)+" "+AccountCurrency(),"Arial",Shrift02,BodyShriftColor);
 
 	// Текущая прибыль/убыток в пунктах
 	if(OrdersTotal()==0) TekProfitPips=0;
@@ -922,7 +918,7 @@ void MainPanel()
 		{
 			if (!OrderSelect(i,SELECT_BY_POS,MODE_TRADES))
 			{
-				EAComment("Ошибка доступа к истории!");
+				EAComment("Error accessing the history!");
 				break;
 			}
 			if (OrderType()==0) TekProfitPips=(Bid-OrderOpenPrice())/Point;
@@ -930,9 +926,9 @@ void MainPanel()
 			if (OrderType()>1)  TekProfitPips=0;
 		}
 	}
-	CreateText("Profit2",0,0.01*ChartX,0.2*ChartY,CORNER_LEFT_UPPER,"Тек. прибыль: "+DoubleToString((AccountInfoDouble(ACCOUNT_PROFIT)/AccountBalance())*100,2)+" %","Arial",Shrift02,BodyShriftColor);
-	CreateText("Profit3",0,0.15*ChartX,0.2*ChartY,CORNER_LEFT_UPPER,"Тек. прибыль: "+DoubleToString(TekProfitPips,0)+" pips","Arial",Shrift02,BodyShriftColor);
-	CreateText("Risk1",0,0.01*ChartX,0.24*ChartY,CORNER_LEFT_UPPER,"Тек. риск общий: "+DoubleToString(AllRisk(),2)+" "+"%","Arial",Shrift02,BodyShriftColor);
+	CreateText("Profit2",		0,0.01*ChartX,0.2*ChartY,	CORNER_LEFT_UPPER,	"Account Profit: "		+ DoubleToString((AccountInfoDouble(ACCOUNT_PROFIT)/AccountBalance())*100,2)+" %","Arial",Shrift02,BodyShriftColor);
+	CreateText("Profit3",		0,0.15*ChartX,0.2*ChartY,	CORNER_LEFT_UPPER,	"Account Profit: "		+ DoubleToString(TekProfitPips,0)+" pips","Arial",Shrift02,BodyShriftColor);
+	CreateText("Risk1",			0,0.01*ChartX,0.24*ChartY,	CORNER_LEFT_UPPER,	"Total risk: "			+ DoubleToString(AllRisk(),2)+" "+"%","Arial",Shrift02,BodyShriftColor);
 }
 
 //+------------------------------------------------------------------+
